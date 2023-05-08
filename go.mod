@@ -1,4 +1,4 @@
-module itgit.emea.cegedim.grp/plerouge/itcare-go-client
+module github.com/doctori/itcare-go-client
 
 go 1.19
 

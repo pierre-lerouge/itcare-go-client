@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	oauth2 "golang.org/x/oauth2/clientcredentials"
 )
@@ -20,7 +21,22 @@ type ITCareClient struct {
 	ClientID string
 }
 
+// Connect will use the client ID / Secret givent or will directly
+// get them from ITCARE_CLIENT_ID ITCARE_CLIENT_SECRET variable
 func (itc *ITCareClient) Connect() {
+	if itc.ClientID == "" && itc.ClientSecret == "" {
+
+		if os.Getenv("ITCARE_CLIENT_ID") == "" {
+			// TODO Raise Exception
+			panic(fmt.Errorf("could not find client ID param or ITCARE_CLIENT_ID variable"))
+		}
+		itc.ClientID = os.Getenv("ITCARE_CLIENT_ID")
+		if os.Getenv("ITCARE_CLIENT_SECRET") == "" {
+			// TODO Raise Exception
+			panic(fmt.Errorf("could not find client Secret param or ITCARE_CLIENT_SECRET variable"))
+		}
+		itc.ClientSecret = os.Getenv("ITCARE_CLIENT_SECRET")
+	}
 	ctx := context.Background()
 	conf := &oauth2.Config{
 		ClientID:     itc.ClientID,
@@ -31,7 +47,7 @@ func (itc *ITCareClient) Connect() {
 	itc.Client = conf.Client(ctx)
 }
 
-func (itc *ITCareClient) GetCI(ciName string) {
+func (itc *ITCareClient) GetCI(ciName string) (instances []Instance) {
 	fmt.Printf("Looking for %s \n", ciName)
 	req, err := http.NewRequest("GET", "https://api.cegedim.cloud/itcare/compute/instances", nil)
 	if err != nil {
@@ -47,7 +63,6 @@ func (itc *ITCareClient) GetCI(ciName string) {
 		fmt.Printf("Could not get instance : %s\n", err)
 		return
 	}
-	fmt.Printf("Response is %s\n", result.Body)
 	body, err := ioutil.ReadAll(result.Body)
 	if err != nil {
 		fmt.Printf("Could not read response body %s\n", err)
@@ -58,5 +73,6 @@ func (itc *ITCareClient) GetCI(ciName string) {
 	if err != nil {
 		fmt.Printf("Could not unmarshal response instance %s\n", err)
 	}
-	fmt.Printf("Instance CPU Number is %d\n", instanceResponse.Content[0].CPU)
+	fmt.Printf("Availability Zone is %s\n", instanceResponse.Content[0].LabelAvailabilityZone)
+	return instanceResponse.Content
 }

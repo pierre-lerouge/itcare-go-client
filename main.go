@@ -5,10 +5,8 @@ import (
 )
 
 func main() {
-	client := itcare.ITCareClient{
-		ClientID:     "cgdm-sa-xoxo",
-		ClientSecret: "xoxo",
-	}
+	client := itcare.ITCareClient{}
 	client.Connect()
-	client.GetCI("PEBCNRSWEB02")
+	client.GetCI("MAMACHINE01")
+
 }
