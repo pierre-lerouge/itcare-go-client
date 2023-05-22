@@ -58,7 +58,7 @@ func (itc *ITCareClient) Connect() {
 	itc.Client.SetBaseURL(baseURL)
 }
 
-func (itc *ITCareClient) GetCI(ciName string) (instances Instance, err error) {
+func (itc *ITCareClient) GetInstance(ciName string) (instances Instance, err error) {
 	fmt.Printf("Looking for %s \n", ciName)
 	// instanceResponse will hold the content of the result as a struct
 	var instanceResponse = new(InstanceResponse)

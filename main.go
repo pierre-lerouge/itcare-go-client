@@ -9,7 +9,7 @@ import (
 func main() {
 	client := itcare.ITCareClient{}
 	client.Connect()
-	ci, err := client.GetCI("MAMACHINE")
+	ci, err := client.GetInstance("MAMACHINE")
 	if err != nil {
 		panic(err)
 	}
