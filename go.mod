@@ -1,4 +1,4 @@
-module github.com/doctori/itcare-go-client
+module github.com/pierre-lerouge/itcare-go-client
 
 go 1.19
 
