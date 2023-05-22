@@ -9,18 +9,6 @@ import (
 	oauth2 "golang.org/x/oauth2/clientcredentials"
 )
 
-// ITCareClient holds the http client and authentication params to use the ITCareAPI
-type ITCareClient struct {
-	// Client holding the HTTPClient
-	Client *resty.Client
-	// ClientSecret holds the secret token for OIDC Authentication
-	ClientSecret string
-	// ClientID holds the id token for OIDC Authentication
-	ClientID string
-	// ClientApp holds the user Agent use to contact the ITCare API
-	ClientApp string
-}
-
 // TODO : make it configurable
 const baseURL = "https://api.cegedim.cloud/itcare"
 const OIDCHost = "accounts.cegedim.cloud"
