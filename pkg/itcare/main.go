@@ -2,24 +2,28 @@ package itcare
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 
+	resty "github.com/go-resty/resty/v2"
 	oauth2 "golang.org/x/oauth2/clientcredentials"
 )
 
 // ITCareClient holds the http client and authentication params to use the ITCareAPI
 type ITCareClient struct {
 	// Client holding the HTTPClient
-	Client *http.Client
-	// ClientSecret holding the secret token for OIDC Authentication
+	Client *resty.Client
+	// ClientSecret holds the secret token for OIDC Authentication
 	ClientSecret string
-	// ClientID holding the id token for OIDC Authentication
+	// ClientID holds the id token for OIDC Authentication
 	ClientID string
+	// ClientApp holds the user Agent use to contact the ITCare API
+	ClientApp string
 }
+
+// TODO : make it configurable
+const baseURL = "https://api.cegedim.cloud/itcare"
+const OIDCHost = "accounts.cegedim.cloud"
 
 // Connect will use the client ID / Secret givent or will directly
 // get them from ITCARE_CLIENT_ID ITCARE_CLIENT_SECRET variable
@@ -42,37 +46,40 @@ func (itc *ITCareClient) Connect() {
 		ClientID:     itc.ClientID,
 		ClientSecret: itc.ClientSecret,
 		Scopes:       []string{"openid"},
-		TokenURL:     "https://accounts.cegedim.cloud/auth/realms/cloud/protocol/openid-connect/token",
+		TokenURL:     fmt.Sprintf("https://%s/auth/realms/cloud/protocol/openid-connect/token", OIDCHost),
 	}
-	itc.Client = conf.Client(ctx)
+	if itc.ClientApp == "" {
+		itc.ClientApp = "itcare-go-client/v1"
+	}
+	itc.Client = resty.NewWithClient(conf.Client(ctx))
+	itc.Client.SetHeaders(map[string]string{
+		"Content-Type": "application/json",
+		"User-Agent":   itc.ClientApp})
+	itc.Client.SetBaseURL(baseURL)
 }
 
-func (itc *ITCareClient) GetCI(ciName string) (instances []Instance) {
+func (itc *ITCareClient) GetCI(ciName string) (instances Instance, err error) {
 	fmt.Printf("Looking for %s \n", ciName)
-	req, err := http.NewRequest("GET", "https://api.cegedim.cloud/itcare/compute/instances", nil)
-	if err != nil {
-		fmt.Printf("Could not prepare new request %s", err)
-		return
-	}
-	query := req.URL.Query()
-	query.Add("names", ciName)
-	req.URL.RawQuery = query.Encode()
+	// instanceResponse will hold the content of the result as a struct
+	var instanceResponse = new(InstanceResponse)
+	err = nil
+	_, err = itc.Client.R().
+		SetQueryParams(map[string]string{
+			"names": ciName,
+		}).
+		SetResult(instanceResponse).
+		Get("/compute/instances")
 
-	result, err := itc.Client.Do(req)
 	if err != nil {
 		fmt.Printf("Could not get instance : %s\n", err)
 		return
 	}
-	body, err := ioutil.ReadAll(result.Body)
-	if err != nil {
-		fmt.Printf("Could not read response body %s\n", err)
+	if len(instanceResponse.Content) > 1 {
+		fmt.Printf("Warning GetCI returns multiple CI, returning the first one")
+	}
+	if len(instanceResponse.Content) == 0 {
+		err = fmt.Errorf("no results found")
 		return
 	}
-	var instanceResponse = new(InstanceResponse)
-	err = json.Unmarshal(body, instanceResponse)
-	if err != nil {
-		fmt.Printf("Could not unmarshal response instance %s\n", err)
-	}
-	fmt.Printf("Availability Zone is %s\n", instanceResponse.Content[0].LabelAvailabilityZone)
-	return instanceResponse.Content
+	return instanceResponse.Content[0], err
 }
