@@ -79,7 +79,7 @@ func (itc *ITCareClient) getInstanceBy(propertyName string, propertyValue string
 
 	return instanceResponse, err
 }
-func (itc *ITCareClient) GetInstanceByID(id int) (instance *Instance, err error) {
+func (itc *ITCareClient) GetInstanceByID(id int, withNetwork bool) (instance *Instance, err error) {
 	err = nil
 	instance = new(Instance)
 	instanceUrl := fmt.Sprintf("/compute/instances/%d", id)
@@ -90,6 +90,14 @@ func (itc *ITCareClient) GetInstanceByID(id int) (instance *Instance, err error)
 	if err != nil {
 		fmt.Printf("Could not get instance : %s\n", err)
 		return
+	}
+	if withNetwork {
+		networkURL := fmt.Sprintf("/compute/instances/%d/networks", id)
+		networkResult := new(InstanceNetwork)
+		_, err = itc.Client.R().
+			SetResult(networkResult).
+			Get(networkURL)
+		instance.Network = *networkResult
 	}
 	fmt.Println(instance)
 	return
