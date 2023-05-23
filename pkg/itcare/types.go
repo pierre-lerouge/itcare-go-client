@@ -3,7 +3,10 @@ package itcare
 import resty "github.com/go-resty/resty/v2"
 
 const (
-	InstanceType string = "instance"
+	InstanceType   string = "instance"
+	ActiveStatus   string = "ACTIVE"
+	InactiveStatus string = "INACTIVE"
+	RemovedStatus  string = "REMOVED"
 )
 
 // ITCareClient holds the http client and authentication params to use the ITCareAPI
