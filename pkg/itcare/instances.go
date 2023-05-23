@@ -1,7 +1,7 @@
 package itcare
 
-// InstanceResponse holds the list of instances returned with pagionation informations
-type InstanceResponse struct {
+// InstancesResponse holds the list of instances returned with pagionation informations
+type InstancesResponse struct {
 	Content          []Instance `json:"content"`
 	NumberOfElements uint16     `json:"numberOfElement"`
 }
@@ -27,7 +27,8 @@ type Instance struct {
 	LabelDataCenter       string          `json:"labelDatacenter"`
 	LabelArea             string          `json:"labelArea"`
 	LabelAvailabilityZone string          `json:"labelAvailabilityZone"`
-	TotalSizeDisks        string          `json:"totalSizeDisks"` // TODO cast this into float
+	TotalSizeDisks        string          `json:"totalSizeDisks,omitempty"` // TODO cast this into float
+	Storage               float32         `json:"storage,omitempty"`
 	CPU                   uint8           `json:"cpu"`
 	RAM                   uint8           `json:"ram"`
 }

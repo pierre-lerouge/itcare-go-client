@@ -41,33 +41,56 @@ func (itc *ITCareClient) Connect() {
 	}
 	itc.Client = resty.NewWithClient(conf.Client(ctx))
 	itc.Client.SetHeaders(map[string]string{
+		"Accept":       "application/vnd.cegedim-it.v1+json",
 		"Content-Type": "application/json",
 		"User-Agent":   itc.ClientApp})
 	itc.Client.SetBaseURL(baseURL)
 }
 
-func (itc *ITCareClient) GetInstance(ciName string) (instances Instance, err error) {
+// GetInstance return the instance base on the name given
+func (itc *ITCareClient) GetInstance(ciName string) (instance *Instance, err error) {
 	fmt.Printf("Looking for %s \n", ciName)
+	instancesResponse, err := itc.getInstanceBy("names", ciName)
+	if len(instancesResponse.Content) > 1 {
+		fmt.Printf("Warning GetCI returns multiple CI, returning the first one")
+	}
+	if len(instancesResponse.Content) == 0 {
+		err = fmt.Errorf("no results found")
+		return
+	}
+	return &instancesResponse.Content[0], err
+}
+
+// Todo plural
+func (itc *ITCareClient) getInstanceBy(propertyName string, propertyValue string) (instanceResponse *InstancesResponse, err error) {
 	// instanceResponse will hold the content of the result as a struct
-	var instanceResponse = new(InstanceResponse)
 	err = nil
+	instanceResponse = new(InstancesResponse)
 	_, err = itc.Client.R().
 		SetQueryParams(map[string]string{
-			"names": ciName,
+			propertyName: propertyValue,
 		}).
 		SetResult(instanceResponse).
 		Get("/compute/instances")
-
 	if err != nil {
 		fmt.Printf("Could not get instance : %s\n", err)
 		return
 	}
-	if len(instanceResponse.Content) > 1 {
-		fmt.Printf("Warning GetCI returns multiple CI, returning the first one")
-	}
-	if len(instanceResponse.Content) == 0 {
-		err = fmt.Errorf("no results found")
+
+	return instanceResponse, err
+}
+func (itc *ITCareClient) GetInstanceByID(id int) (instance *Instance, err error) {
+	err = nil
+	instance = new(Instance)
+	instanceUrl := fmt.Sprintf("/compute/instances/%d", id)
+	fmt.Printf("Looking for : %s\n", instanceUrl)
+	_, err = itc.Client.R().
+		SetResult(instance).
+		Get(instanceUrl)
+	if err != nil {
+		fmt.Printf("Could not get instance : %s\n", err)
 		return
 	}
-	return instanceResponse.Content[0], err
+	fmt.Println(instance)
+	return
 }
